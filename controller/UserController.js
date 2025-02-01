@@ -25,11 +25,11 @@ exports.createUser = asyncHandler(async (req, res, next) => {
       email,
       password,
     });
-    // await sendMail({
-    //   email: user.email,
-    //   subject: `Onboarded Successfully`,
-    //   message: "welcome",
-    // });
+    await sendMail({
+      email: user.email,
+      subject: `Onboarded Successfully`,
+      message: "Welcome To Gratta Dashboard",
+    });
     return res.status(201).json({
       success: true,
       user,
