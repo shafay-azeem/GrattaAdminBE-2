@@ -73,7 +73,9 @@ exports.loginUser = asyncHandler(async (req, res, next) => {
       error.statusCode = 422;
       throw error;
     }
-    const user = await User.findOne({ email }).select("+password");
+    const user = await User.findOne({ email })
+      .select("+password")
+      .populate("company", "name");
     if (!user) {
       const error = new Error("User is not found with this email");
       error.statusCode = 401;
