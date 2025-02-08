@@ -1,4 +1,6 @@
 const User = require("../models/UserModel");
+const Company = require("../models/CompanyModel");
+
 const sendMail = require("../utils/SendMail");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
@@ -7,27 +9,45 @@ const asyncHandler = require("express-async-handler");
 
 //SignUp User --Post
 exports.createUser = asyncHandler(async (req, res, next) => {
-  const { firstName, lastName, companyName, email, password, } = req.body;
+  const { firstName, lastName, companyName, email, password } = req.body;
+
   try {
-    let user;
-    user = await User.findOne({
-      $or: [{ email: email }]
-    });
+    // Check if the user already exists
+    let user = await User.findOne({ email });
     if (user) {
-      const error = new Error(
-        "User Already Exist with this Email"
-      );
-      error.statusCode = 400;
-      throw error;
+      return res.status(400).json({
+        success: false,
+        message: "User already exists with this email",
+      });
     }
+
+    // Check if the company exists
+    let company = await Company.findOne({ name: companyName });
+    if (company) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Company already exists. Please provide a unique company name.",
+      });
+    }
+    // Create the company
+    company = await Company.create({ name: companyName });
+
+    // Create the user
     user = await User.create({
-      firstName, lastName, companyName,
+      firstName,
+      lastName,
       email,
       password,
+      company: company._id, // Link the user to the company
     });
+
+    user = await User.findById(user._id).populate("company", "name");
+
+    // Send onboarding email
     await sendMail({
       email: user.email,
-      subject: `Onboarded Successfully`,
+      subject: "Onboarded Successfully",
       message: "Welcome To Gratta Dashboard",
     });
     return res.status(201).json({
@@ -98,9 +118,7 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
     //   "host"
     // )}/ResetPassword/${resetToken}`;
 
-
     const resetPasswordUrl = `https://gratta-admin-fe.vercel.app/ResetPassword/${resetToken}`;
-
 
     const message = `Your password reset token is : \n\n ${resetPasswordUrl}`;
 
@@ -182,21 +200,32 @@ exports.resetPassword = asyncHandler(async (req, res, next) => {
 
 //Update User --Post
 exports.updateProfile = asyncHandler(async (req, res, next) => {
-  const newUserData = {
-    name: req.body.name,
-    resName: req.body.resName,
-    resImage: req.body.resImage,
-    currencySymbol: req.body.currencySymbol,
-  };
   try {
-    const user = await User.findByIdAndUpdate(req.user.id, newUserData, {
-      new: true,
-      runValidators: true,
-      useFindAndModify: false,
-    });
-    return res.status(200).json({
+    const { firstName, lastName } = req.body;
+    let user = await User.findById(req.user.id).populate("company", "name");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found with this ID",
+      });
+    }
+
+    // Update only firstName and lastName
+    user.firstName = firstName || user.firstName;
+    user.lastName = lastName || user.lastName;
+
+    await user.save();
+
+    res.status(200).json({
       success: true,
-      user,
+      user: {
+        _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        companyName: user.company ? user.company.name : null,
+      },
+      message: "User updated successfully",
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -212,12 +241,13 @@ exports.deleteUser = asyncHandler(async (req, res, next) => {
     const user = await User.findById(req.params.id);
 
     if (!user) {
-      const error = new Error("User is not found with this id");
-      error.statusCode = 404;
-      throw error;
+      return res.status(404).json({
+        success: false,
+        message: "User not found with this ID",
+      });
     }
 
-    await user.remove();
+    await User.deleteOne({ _id: user._id });
     res.status(200).json({
       success: true,
       message: "User deleted successfully",
@@ -232,14 +262,13 @@ exports.deleteUser = asyncHandler(async (req, res, next) => {
 
 //Get All Users --Get
 exports.getAllUsers = asyncHandler(async (req, res, next) => {
-  ///To execute the query and retrieve the result set, you can call the exec() method on the Query object. The exec() method returns a Promise that resolves with an array of documents that match the query criteria.
-
   try {
-    const users = await User.find().exec();
-    if (!users) {
-      const error = new Error("Users Not Found");
-      error.statusCode = 404;
-      throw error;
+    const users = await User.find().populate("company", "name").exec();
+    if (!users || users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Users not found",
+      });
     }
     res.status(200).json({
       success: true,
@@ -363,13 +392,16 @@ exports.getuserDetailByresUserName = asyncHandler(async (req, res, next) => {
 });
 
 exports.getuserDetailById = asyncHandler(async (req, res, next) => {
-  const userId = req.params.userId;
   try {
-    const user = await User.findById(new mongoose.Types.ObjectId(userId));
+    const user = await User.findById(req.params.userId).populate(
+      "company",
+      "name"
+    );
     if (!user) {
-      const error = new Error("User Not Found");
-      error.statusCode = 404;
-      throw error;
+      return res.status(404).json({
+        success: false,
+        message: "User not found with this ID",
+      });
     }
     res.status(200).json({
       success: true,

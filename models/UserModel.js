@@ -4,25 +4,30 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 
 const userSchema = new mongoose.Schema({
-  firstName: {
-    type: String,
-  },
-  lastName: {
-    type: String,
-  },
-  companyName: {
-    type: String,
-  },
+  firstName: { type: String, required: true, trim: true },
+  lastName: { type: String, required: true, trim: true },
   email: {
     type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    index: true,
   },
-  password: {
+  password: { type: String },
+  company: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Company",
+    required: true,
+    index: true,
+  },
+  role: {
     type: String,
+    enum: ["admin", "team_member"],
+    default: "admin",
   },
-  createAt: {
-    type: Date,
-    default: Date.now(),
-  },
+  status: { type: String, enum: ["invited", "active"], default: "active" },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
   resetPasswordToken: String,
   resetPasswordTime: Date,
 });
