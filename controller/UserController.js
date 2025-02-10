@@ -416,3 +416,85 @@ exports.getuserDetailById = asyncHandler(async (req, res, next) => {
     next(err);
   }
 });
+
+// Invite a new user
+exports.inviteUser = asyncHandler(async (req, res, next) => {
+  const { firstName, lastName, email, companyId, role } = req.body;
+
+  try {
+    // Check if user already exists
+    let user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).json({ success: false, message: "User already exists." });
+    }
+
+    // Check if the company exists
+    let company = await Company.findById(companyId);
+    if (!company) {
+      return res.status(400).json({ success: false, message: "Company not found." });
+    }
+
+    // Create user with invited status
+    user = await User.create({
+      firstName,
+      lastName,
+      email,
+      company: companyId,
+      role: role || "team_member",
+      status: "invited",
+    });
+
+    // Generate reset token for setting password
+    const resetToken = user.getResetToken();
+    await user.save({ validateBeforeSave: false });
+
+    // Construct reset password URL
+    const resetPasswordUrl = `https://your-app.com/accept-invite/${resetToken}`;
+
+    // Email message
+    const message = `Hello ${firstName},\n\nYou have been invited to join ${company.name} as a ${role || "team_member"}.\nClick the link below to set your password and activate your account:\n${resetPasswordUrl}\n\nRegards,\nYour Team`;
+
+    await sendMail({ email: user.email, subject: "You're Invited!", message });
+
+    res.status(201).json({
+      success: true,
+      message: "Invitation sent successfully.",
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Accept invitation and set password
+exports.acceptInvitation = asyncHandler(async (req, res, next) => {
+  try {
+    // Hash the token
+    const resetPasswordToken = crypto.createHash("sha256").update(req.params.token).digest("hex");
+
+    // Find user with valid token
+    const user = await User.findOne({ resetPasswordToken, resetPasswordTime: { $gt: Date.now() } });
+    if (!user) {
+      return res.status(400).json({ success: false, message: "Invalid or expired token." });
+    }
+
+    // Validate passwords
+    if (req.body.password !== req.body.confirmPassword) {
+      return res.status(400).json({ success: false, message: "Passwords do not match." });
+    }
+
+    // Hash new password
+    user.password = req.body.password
+    user.resetPasswordToken = undefined;
+    user.resetPasswordTime = undefined;
+    user.status = "active";
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Password set successfully. Your account is now active.",
+    });
+  } catch (error) {
+    next(error);
+  }
+});
