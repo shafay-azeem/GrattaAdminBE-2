@@ -13,7 +13,8 @@ const {
   getuserDetailById,
   getuserDetailByresUserName,
   acceptInvitation,
-  inviteUser
+  inviteUser,
+  getUsersByCompany
 } = require("../controller/UserController");
 const { isAuthenticatedUser } = require("../middleware/auth");
 const router = express.Router();
@@ -22,6 +23,7 @@ const router = express.Router();
 router.route("/createUser").post(createUser);
 router.route("/inviteUser").post(inviteUser);
 router.route("/login").post(loginUser);
+router.get("/getUsersByCompany/:companyId", getUsersByCompany);
 router.route("/forgotPassword").post(forgotPassword);
 router.route("/resetPassword/:token").put(resetPassword);
 router.route("/acceptInvitation/:token").put(acceptInvitation);

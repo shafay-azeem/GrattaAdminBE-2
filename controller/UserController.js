@@ -499,3 +499,40 @@ exports.acceptInvitation = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
+
+
+// Get Users by Company ID -- GET
+exports.getUsersByCompany = asyncHandler(async (req, res, next) => {
+  try {
+    const { companyId } = req.params; // Get companyId from request parameters
+
+    if (!companyId) {
+      return res.status(400).json({
+        success: false,
+        message: "Company ID is required",
+      });
+    }
+
+    // Fetch users belonging to the provided companyId
+    const users = await User.find({ company: companyId })
+      .populate("company", "name") // Populate company details if needed
+      .exec();
+
+    if (!users || users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No users found for this company",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      users,
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+});
