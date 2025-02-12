@@ -23,7 +23,7 @@ const router = express.Router();
 router.route("/createUser").post(createUser);
 router.route("/inviteUser").post(inviteUser);
 router.route("/login").post(loginUser);
-router.route("/getUsersByCompany/:companyId"),get(getUsersByCompany)
+router.route("/getUsersByCompany/:companyId").get(getUsersByCompany)
 router.route("/forgotPassword").post(forgotPassword);
 router.route("/resetPassword/:token").put(resetPassword);
 router.route("/acceptInvitation/:token").put(acceptInvitation);
