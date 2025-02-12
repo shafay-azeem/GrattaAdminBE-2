@@ -449,7 +449,7 @@ exports.inviteUser = asyncHandler(async (req, res, next) => {
     await user.save({ validateBeforeSave: false });
 
     // Construct reset password URL
-    https://gratta-admin-fe.vercel.app/ResetPassword/${resetToken}
+   // https://gratta-admin-fe.vercel.app/ResetPassword/${resetToken}
     const resetPasswordUrl = `https://gratta-admin-fe.vercel.app/ResetPassword/${resetToken}`;
 
     // Email message

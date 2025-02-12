@@ -12,7 +12,8 @@ const {
   logout,
   getuserDetailById,
   getuserDetailByresUserName,
-  acceptInvitation
+  acceptInvitation,
+  inviteUser
 } = require("../controller/UserController");
 const { isAuthenticatedUser } = require("../middleware/auth");
 const router = express.Router();
