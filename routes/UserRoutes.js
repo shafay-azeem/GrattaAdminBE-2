@@ -12,15 +12,18 @@ const {
   logout,
   getuserDetailById,
   getuserDetailByresUserName,
+  acceptInvitation
 } = require("../controller/UserController");
 const { isAuthenticatedUser } = require("../middleware/auth");
 const router = express.Router();
 
 //user
 router.route("/createUser").post(createUser);
+router.route("/inviteUser").post(inviteUser);
 router.route("/login").post(loginUser);
 router.route("/forgotPassword").post(forgotPassword);
 router.route("/resetPassword/:token").put(resetPassword);
+router.route("/acceptInvitation/:token").put(acceptInvitation);
 router.route("/userDetail").get(isAuthenticatedUser, userDetail);
 router.route("/getAllUsers").get(getAllUsers);
 router.route("/updateProfile").put(isAuthenticatedUser, updateProfile);

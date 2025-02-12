@@ -449,7 +449,8 @@ exports.inviteUser = asyncHandler(async (req, res, next) => {
     await user.save({ validateBeforeSave: false });
 
     // Construct reset password URL
-    const resetPasswordUrl = `https://your-app.com/accept-invite/${resetToken}`;
+    https://gratta-admin-fe.vercel.app/ResetPassword/${resetToken}
+    const resetPasswordUrl = `https://gratta-admin-fe.vercel.app/ResetPassword/${resetToken}`;
 
     // Email message
     const message = `Hello ${firstName},\n\nYou have been invited to join ${company.name} as a ${role || "team_member"}.\nClick the link below to set your password and activate your account:\n${resetPasswordUrl}\n\nRegards,\nYour Team`;
