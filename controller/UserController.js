@@ -425,13 +425,17 @@ exports.inviteUser = asyncHandler(async (req, res, next) => {
     // Check if user already exists
     let user = await User.findOne({ email });
     if (user) {
-      return res.status(400).json({ success: false, message: "User already exists." });
+      return res
+        .status(400)
+        .json({ success: false, message: "User already exists." });
     }
 
     // Check if the company exists
     let company = await Company.findById(companyId);
     if (!company) {
-      return res.status(400).json({ success: false, message: "Company not found." });
+      return res
+        .status(400)
+        .json({ success: false, message: "Company not found." });
     }
 
     // Create user with invited status
@@ -449,11 +453,15 @@ exports.inviteUser = asyncHandler(async (req, res, next) => {
     await user.save({ validateBeforeSave: false });
 
     // Construct reset password URL
-   // https://gratta-admin-fe.vercel.app/ResetPassword/${resetToken}
-    const resetPasswordUrl = `https://gratta-admin-fe.vercel.app/ResetPassword/${resetToken}`;
+    // https://gratta-admin-fe.vercel.app/ResetPassword/${resetToken}
+    const resetPasswordUrl = `https://gratta-admin-fe.vercel.app/setPassword/${resetToken}`;
 
     // Email message
-    const message = `Hello ${firstName},\n\nYou have been invited to join ${company.name} as a ${role || "team_member"}.\nClick the link below to set your password and activate your account:\n${resetPasswordUrl}\n\nRegards,\nYour Team`;
+    const message = `Hello ${firstName},\n\nYou have been invited to join ${
+      company.name
+    } as a ${
+      role || "team_member"
+    }.\nClick the link below to set your password and activate your account:\n${resetPasswordUrl}\n\nRegards,\nYour Team`;
 
     await sendMail({ email: user.email, subject: "You're Invited!", message });
 
@@ -470,21 +478,31 @@ exports.inviteUser = asyncHandler(async (req, res, next) => {
 exports.acceptInvitation = asyncHandler(async (req, res, next) => {
   try {
     // Hash the token
-    const resetPasswordToken = crypto.createHash("sha256").update(req.params.token).digest("hex");
+    const resetPasswordToken = crypto
+      .createHash("sha256")
+      .update(req.params.token)
+      .digest("hex");
 
     // Find user with valid token
-    const user = await User.findOne({ resetPasswordToken, resetPasswordTime: { $gt: Date.now() } });
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordTime: { $gt: Date.now() },
+    });
     if (!user) {
-      return res.status(400).json({ success: false, message: "Invalid or expired token." });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid or expired token." });
     }
 
     // Validate passwords
     if (req.body.password !== req.body.confirmPassword) {
-      return res.status(400).json({ success: false, message: "Passwords do not match." });
+      return res
+        .status(400)
+        .json({ success: false, message: "Passwords do not match." });
     }
 
     // Hash new password
-    user.password = req.body.password
+    user.password = req.body.password;
     user.resetPasswordToken = undefined;
     user.resetPasswordTime = undefined;
     user.status = "active";
@@ -499,7 +517,6 @@ exports.acceptInvitation = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
-
 
 // Get Users by Company ID -- GET
 exports.getUsersByCompany = asyncHandler(async (req, res, next) => {
