@@ -190,7 +190,7 @@ exports.resetPassword = asyncHandler(async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      user,
+      message: "Your password has been successfully reset.",
     });
   } catch (err) {
     if (!err.statusCode) {
