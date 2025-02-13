@@ -553,3 +553,47 @@ exports.getUsersByCompany = asyncHandler(async (req, res, next) => {
     next(err);
   }
 });
+
+// Delete User and its references -- DELETE
+// exports.deleteUser = asyncHandler(async (req, res, next) => {
+//   try {
+//     const { userId } = req.params;
+
+//     if (!userId) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "User ID is required",
+//       });
+//     }
+
+//     // Find user
+//     const user = await User.findById(userId);
+//     if (!user) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "User not found",
+//       });
+//     }
+
+//     // Delete user's wallet if exists
+//     await UserWallet.deleteOne({ user: userId });
+
+//     // Delete all points transactions where user is sender or receiver
+//     await PointsTransaction.deleteMany({
+//       $or: [{ sender: userId }, { receiver: userId }],
+//     });
+
+//     // Finally, delete the user
+//     await User.deleteOne({ _id: userId });
+
+//     res.status(200).json({
+//       success: true,
+//       message: "User and related data deleted successfully",
+//     });
+//   } catch (err) {
+//     if (!err.statusCode) {
+//       err.statusCode = 500;
+//     }
+//     next(err);
+//   }
+// });
