@@ -1,6 +1,7 @@
 const User = require("../models/UserModel");
 const Company = require("../models/CompanyModel");
-
+const UserWallet = require("../models/UserWalletModel");
+const PointsTransaction = require("../models/PointsTransactionModel");
 const sendMail = require("../utils/SendMail");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
@@ -521,7 +522,7 @@ exports.acceptInvitation = asyncHandler(async (req, res, next) => {
 // Get Users by Company ID -- GET
 exports.getUsersByCompany = asyncHandler(async (req, res, next) => {
   try {
-    const { companyId } = req.params; // Get companyId from request parameters
+    const { companyId } = req.params;
 
     if (!companyId) {
       return res.status(400).json({
@@ -530,21 +531,61 @@ exports.getUsersByCompany = asyncHandler(async (req, res, next) => {
       });
     }
 
-    // Fetch users belonging to the provided companyId
+    // Fetch users by companyId in descending order (newest first)
     const users = await User.find({ company: companyId })
-      .populate("company", "name") // Populate company details if needed
-      .exec();
+      .populate("company", "name")
+      .sort({ createdAt: -1 }) // Sort by createdAt field in descending order
+      .lean();
 
-    if (!users || users.length === 0) {
+    if (!users.length) {
       return res.status(404).json({
         success: false,
         message: "No users found for this company",
       });
     }
 
+    res.status(200).json({ success: true, users });
+  } catch (err) {
+    next(err);
+  }
+});
+
+
+// Delete User and its references -- DELETE
+exports.deleteUserById = asyncHandler(async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required",
+      });
+    }
+
+    // Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Delete user's wallet if exists
+    await UserWallet.deleteOne({ user: userId });
+
+    // Delete all points transactions where user is sender or receiver
+    await PointsTransaction.deleteMany({
+      $or: [{ sender: userId }, { receiver: userId }],
+    });
+
+    // Finally, delete the user
+    await User.deleteOne({ _id: userId });
+
     res.status(200).json({
       success: true,
-      users,
+      message: "User and related data deleted successfully",
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -553,47 +594,3 @@ exports.getUsersByCompany = asyncHandler(async (req, res, next) => {
     next(err);
   }
 });
-
-// Delete User and its references -- DELETE
-// exports.deleteUser = asyncHandler(async (req, res, next) => {
-//   try {
-//     const { userId } = req.params;
-
-//     if (!userId) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "User ID is required",
-//       });
-//     }
-
-//     // Find user
-//     const user = await User.findById(userId);
-//     if (!user) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "User not found",
-//       });
-//     }
-
-//     // Delete user's wallet if exists
-//     await UserWallet.deleteOne({ user: userId });
-
-//     // Delete all points transactions where user is sender or receiver
-//     await PointsTransaction.deleteMany({
-//       $or: [{ sender: userId }, { receiver: userId }],
-//     });
-
-//     // Finally, delete the user
-//     await User.deleteOne({ _id: userId });
-
-//     res.status(200).json({
-//       success: true,
-//       message: "User and related data deleted successfully",
-//     });
-//   } catch (err) {
-//     if (!err.statusCode) {
-//       err.statusCode = 500;
-//     }
-//     next(err);
-//   }
-// });
