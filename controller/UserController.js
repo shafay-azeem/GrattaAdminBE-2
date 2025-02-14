@@ -7,7 +7,8 @@ const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const asyncHandler = require("express-async-handler");
-
+const xlsx = require("xlsx");
+const fs = require("fs"); 
 //SignUp User --Post
 exports.createUser = asyncHandler(async (req, res, next) => {
   const { firstName, lastName, companyName, email, password } = req.body;
@@ -458,11 +459,9 @@ exports.inviteUser = asyncHandler(async (req, res, next) => {
     const resetPasswordUrl = `https://gratta-admin-fe.vercel.app/setPassword/${resetToken}`;
 
     // Email message
-    const message = `Hello ${firstName},\n\nYou have been invited to join ${
-      company.name
-    } as a ${
-      role || "team_member"
-    }.\nClick the link below to set your password and activate your account:\n${resetPasswordUrl}\n\nRegards,\nYour Team`;
+    const message = `Hello ${firstName},\n\nYou have been invited to join ${company.name
+      } as a ${role || "team_member"
+      }.\nClick the link below to set your password and activate your account:\n${resetPasswordUrl}\n\nRegards,\nYour Team`;
 
     await sendMail({ email: user.email, subject: "You're Invited!", message });
 
@@ -592,5 +591,118 @@ exports.deleteUserById = asyncHandler(async (req, res, next) => {
       err.statusCode = 500;
     }
     next(err);
+  }
+});
+
+// Bulk invite users
+exports.bulkInvite = asyncHandler(async (req, res, next) => {
+
+  try {
+    // 1) Validate upload
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No file uploaded",
+      });
+    }
+
+    const filePath = req.file.path; // Correct way to store file path for deletion
+
+    // 2) Read workbook from disk
+    const workbook = xlsx.readFile(filePath);
+    const sheetName = workbook.SheetNames[0];
+    const usersData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+    if (!usersData.length) {
+      return res.status(400).json({
+        success: false,
+        message: "File is empty",
+      });
+    }
+
+    // 3) Check which users are already active
+    const emails = usersData.map((item) => item.email.toLowerCase());
+    const existingUsers = await User.find({ email: { $in: emails } });
+
+    const existingEmails = new Set(
+      existingUsers
+        .filter((user) => user.status === "active")
+        .map((user) => user.email.toLowerCase())
+    );
+
+    // 4) Prepare arrays for new users and invitations
+    const newUsers = [];
+    const invitations = [];
+
+    // 5) Loop through each row of the Excel file
+    for (const data of usersData) {
+      const lowerCaseEmail = data.email.toLowerCase();
+
+      // Skip if user is already active
+      if (existingEmails.has(lowerCaseEmail)) {
+        continue;
+      }
+
+      // Check if company is valid
+      const company = await Company.findById(data.companyId);
+      if (!company) {
+        continue; // skip if company doesn't exist
+      }
+
+      let user = await User.findOne({ email: lowerCaseEmail });
+
+      if (!user) {
+        user = new User({
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: lowerCaseEmail,
+          company: data.companyId,
+          role: data.role || "team_member",
+          status: "invited",
+        });
+        newUsers.push(user);
+      }
+
+      const resetToken = user.getResetToken();
+      invitations.push({ user, resetToken, company });
+    }
+
+    // 6) Bulk insert newly created users
+    if (newUsers.length) {
+      await User.insertMany(newUsers, { ordered: false });
+    }
+
+    // 7) Send invitations to each user
+    for (const { user, resetToken, company } of invitations) {
+      await user.save({ validateBeforeSave: false });
+
+      const resetPasswordUrl = `https://gratta-admin-fe.vercel.app/setPassword/${resetToken}`;
+      const message = `Hello ${user.firstName},\n\nYou have been invited to join ${company.name} as a ${user.role}.\nClick the link below to set your password and activate your account:\n${resetPasswordUrl}\n\nRegards,\nYour Team`;
+
+      await sendMail({
+        email: user.email,
+        subject: "You're Invited!",
+        message,
+      });
+    }
+
+    res.status(201).json({
+      success: true,
+      message: "Bulk invitations sent successfully.",
+    });
+    // Delete the uploaded file after successful response
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        console.error("Error deleting file:", err);
+      } else {
+        console.log(`File ${filePath} deleted successfully.`);
+      }
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+
   }
 });

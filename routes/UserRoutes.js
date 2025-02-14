@@ -15,10 +15,50 @@ const {
   acceptInvitation,
   inviteUser,
   getUsersByCompany,
-  deleteUserById
+  deleteUserById,
+  bulkInvite
 } = require("../controller/UserController");
 const { isAuthenticatedUser } = require("../middleware/auth");
+const fs = require("fs"); 
+const path = require("path"); // Added the missing path module
+const multer = require("multer");
+
+
 const router = express.Router();
+
+
+// Step 1: Ensure the uploads folder exists
+const uploadsDirectory = path.join(__dirname, "../uploads");
+function ensureUploadsFolder(req, res, next) {
+  if (!fs.existsSync(uploadsDirectory)) {
+    fs.mkdirSync(uploadsDirectory, { recursive: true });
+  }
+  next();
+}
+
+// Step 2: Configure Multer for disk storage
+const storage = multer.diskStorage({
+  destination: function (req, file, callback) {
+    // Provide the uploads directory
+    callback(null, uploadsDirectory);
+  },
+  filename: function (req, file, callback) {
+    // Generate unique filename
+    const ext = path.extname(file.originalname);
+    const base = path.basename(file.originalname, ext);
+    callback(null, `${base}-${Date.now()}${ext}`);
+  },
+});
+
+const upload = multer({ storage });
+
+// Step 3: Set up the route
+router.post(
+  "/bulkInvite",
+  ensureUploadsFolder,           // Ensures folder is present
+  upload.single("inviteFile"),   // Single file upload with field name 'inviteFile'
+  bulkInvite                     // The controller function
+);
 
 //user
 router.route("/createUser").post(createUser);
