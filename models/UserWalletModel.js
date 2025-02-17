@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 
+
+
 const userWalletSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
