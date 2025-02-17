@@ -55,6 +55,7 @@ const upload = multer({ storage });
 // Step 3: Set up the route
 router.post(
   "/bulkInvite",
+  isAuthenticatedUser,
   ensureUploadsFolder,           // Ensures folder is present
   upload.single("inviteFile"),   // Single file upload with field name 'inviteFile'
   bulkInvite                     // The controller function

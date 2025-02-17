@@ -596,7 +596,7 @@ exports.deleteUserById = asyncHandler(async (req, res, next) => {
 
 // Bulk invite users
 exports.bulkInvite = asyncHandler(async (req, res, next) => {
-
+  let companyId=req.user.company.toString()
   try {
     // 1) Validate upload
     if (!req.file) {
@@ -656,7 +656,7 @@ exports.bulkInvite = asyncHandler(async (req, res, next) => {
           firstName: data.firstName,
           lastName: data.lastName,
           email: lowerCaseEmail,
-          company: data.companyId,
+          company: companyId,
           role: data.role || "team_member",
           status: "invited",
         });
