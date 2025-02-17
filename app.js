@@ -4,12 +4,13 @@ const cors = require("cors");
 const fs = require("fs");
 const app = express();
 
-app.use(express.json());
+
 
 app.use(cors());
 
 // Apply `express.json()` globally **except** for Stripe Webhooks
 app.use((req, res, next) => {
+    console.log(req.originalUrl ,"req.originalUrl ")
     if (req.originalUrl === "/api/payment/V1/stripe-webhook") {
       next(); // Skip `express.json()` for webhooks
     } else {
