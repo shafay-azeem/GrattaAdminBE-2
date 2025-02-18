@@ -28,7 +28,8 @@ const router = express.Router();
 
 
 // Step 1: Ensure the uploads folder exists
-const uploadsDirectory = path.join(__dirname, "../uploads");
+//const uploadsDirectory = path.join(__dirname, "../uploads");
+const uploadsDirectory = "/tmp";
 function ensureUploadsFolder(req, res, next) {
   if (!fs.existsSync(uploadsDirectory)) {
     fs.mkdirSync(uploadsDirectory, { recursive: true });
