@@ -16,16 +16,14 @@ const {
   inviteUser,
   getUsersByCompany,
   deleteUserById,
-  bulkInvite
+  bulkInvite,
 } = require("../controller/UserController");
 const { isAuthenticatedUser } = require("../middleware/auth");
-const fs = require("fs"); 
+const fs = require("fs");
 const path = require("path"); // Added the missing path module
 const multer = require("multer");
 
-
 const router = express.Router();
-
 
 // Step 1: Ensure the uploads folder exists
 //const uploadsDirectory = path.join(__dirname, "../uploads");
@@ -57,17 +55,17 @@ const upload = multer({ storage });
 router.post(
   "/bulkInvite",
   isAuthenticatedUser,
-  ensureUploadsFolder,           // Ensures folder is present
-  upload.single("inviteFile"),   // Single file upload with field name 'inviteFile'
-  bulkInvite                     // The controller function
+  ensureUploadsFolder, // Ensures folder is present
+  upload.single("inviteFile"), // Single file upload with field name 'inviteFile'
+  bulkInvite // The controller function
 );
 
 //user
 router.route("/createUser").post(createUser);
 router.route("/inviteUser").post(inviteUser);
 router.route("/login").post(loginUser);
-router.route("/getUsersByCompany/:companyId").get(getUsersByCompany)
-router.route("/deleteUserById/:id").delete(deleteUserById);
+router.route("/getUsersByCompany/:companyId").get(getUsersByCompany);
+router.route("/deleteUserById/:userId").delete(deleteUserById);
 router.route("/forgotPassword").post(forgotPassword);
 router.route("/resetPassword/:token").put(resetPassword);
 router.route("/acceptInvitation/:token").put(acceptInvitation);
@@ -79,6 +77,8 @@ router.route("/deleteAllUsers").delete(deleteAllUsers);
 router.route("/logout").post(isAuthenticatedUser, logout);
 
 router.route("/getuserDetailById/:userId").get(getuserDetailById);
-router.route("/getuserDetailByresUserName/:resUserName").get(getuserDetailByresUserName);
+router
+  .route("/getuserDetailByresUserName/:resUserName")
+  .get(getuserDetailByresUserName);
 
 module.exports = router;
