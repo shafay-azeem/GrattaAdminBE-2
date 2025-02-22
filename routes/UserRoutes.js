@@ -17,6 +17,7 @@ const {
   getUsersByCompany,
   deleteUserById,
   bulkInvite,
+  getActiveUsersByCompanyId
 } = require("../controller/UserController");
 const { isAuthenticatedUser } = require("../middleware/auth");
 const fs = require("fs");
@@ -63,6 +64,7 @@ router.post(
 //user
 router.route("/createUser").post(createUser);
 router.route("/inviteUser").post(inviteUser);
+router.route("/getActiveUsersByCompanyId/:companyId").post(getActiveUsersByCompanyId);
 router.route("/login").post(loginUser);
 router.route("/getUsersByCompany/:companyId").get(getUsersByCompany);
 router.route("/deleteUserById/:userId").delete(deleteUserById);

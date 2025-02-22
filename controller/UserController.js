@@ -706,3 +706,41 @@ exports.bulkInvite = asyncHandler(async (req, res, next) => {
 
   }
 });
+
+
+// Get Active Users by Company ID -- GET
+exports.getActiveUsersByCompanyId = asyncHandler(async (req, res, next) => {
+  try {
+    const { companyId } = req.params;
+
+    if (!companyId) {
+      return res.status(400).json({
+        success: false,
+        message: "Company ID is required",
+      });
+    }
+
+    // Find active users in the company
+    const activeUsers = await User.find({
+      company: companyId,
+      status: "active",
+    }).select("-password"); // Exclude password field from response
+
+    if (!activeUsers.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No active users found for this company",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: activeUsers,
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+});
