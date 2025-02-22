@@ -708,35 +708,28 @@ exports.bulkInvite = asyncHandler(async (req, res, next) => {
 });
 
 
-// Get Active Users by Company ID -- GET
-exports.getActiveUsersByCompanyId = asyncHandler(async (req, res, next) => {
+
+// Get Active User Count by Company ID -- GET
+exports.getActiveUserCountByCompanyId = asyncHandler(async (req, res, next) => {
   try {
-    let companyId=req?.user?.company.toString()
+    let companyId=req.user.company.toString()
 
-    // if (!companyId) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: "Company ID is required",
-    //   });
-    // }
-
-    // Find active users in the company
-    const activeUsers = await User.find({
-      company: companyId,
-      status: "active",
-    }).select("-password"); // Exclude password field from response
-
-    if (!activeUsers.length) {
-      return res.status(404).json({
+    if (!companyId) {
+      return res.status(400).json({
         success: false,
-        message: "No active users found for this company",
+        message: "Company ID is required",
       });
     }
 
+    // Count active users in the company
+    const activeUserCount = await User.countDocuments({
+      company: companyId,
+      status: "active",
+    });
+
     res.status(200).json({
       success: true,
-      data: activeUsers,
-      count:activeUsers.length
+      activeUserCount, // Will return 0 if no active users
     });
   } catch (err) {
     if (!err.statusCode) {
