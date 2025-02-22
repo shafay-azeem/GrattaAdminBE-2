@@ -711,14 +711,14 @@ exports.bulkInvite = asyncHandler(async (req, res, next) => {
 // Get Active Users by Company ID -- GET
 exports.getActiveUsersByCompanyId = asyncHandler(async (req, res, next) => {
   try {
-    const { companyId } = req.params;
+    let companyId=req?.user?.company.toString()
 
-    if (!companyId) {
-      return res.status(400).json({
-        success: false,
-        message: "Company ID is required",
-      });
-    }
+    // if (!companyId) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Company ID is required",
+    //   });
+    // }
 
     // Find active users in the company
     const activeUsers = await User.find({
@@ -736,6 +736,7 @@ exports.getActiveUsersByCompanyId = asyncHandler(async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: activeUsers,
+      count:activeUsers.length
     });
   } catch (err) {
     if (!err.statusCode) {
