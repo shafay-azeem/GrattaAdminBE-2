@@ -64,7 +64,7 @@ router.post(
 //user
 router.route("/createUser").post(createUser);
 router.route("/inviteUser").post(inviteUser);
-router.route("/getActiveUserCountByCompanyId").get(getActiveUserCountByCompanyId);
+router.route("/getActiveUserCountByCompanyId").get(isAuthenticatedUser,getActiveUserCountByCompanyId);
 router.route("/login").post(loginUser);
 router.route("/getUsersByCompany/:companyId").get(getUsersByCompany);
 router.route("/deleteUserById/:userId").delete(deleteUserById);
