@@ -19,11 +19,16 @@ app.use((req, res, next) => {
 
 const user = require("./routes/UserRoutes");
 const payment = require("./routes/PaymentRoutes");
+const points = require("./routes/PointsRoutes");
+const company = require("./routes/CompanyRoutes");
 const { notFound } = require("./middleware/errorMiddleware");
 
 app.use("/api/user/V1", user);
 
 app.use("/api/payment/V1", payment);
 
+app.use("/api/company/V1", company);
+
+app.use("/api/points/V1", points);
 
 module.exports = app;
