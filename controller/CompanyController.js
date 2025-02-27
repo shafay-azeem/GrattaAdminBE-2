@@ -14,7 +14,7 @@ exports.getCompanyTransactions = async (req, res) => {
     const transactions = await PointsTransaction.find({ company: companyId })
       .populate("sender", "firstName lastName _id") // Get sender details
       .populate("receiver", "firstName lastName _id") // Get receiver details
-      .populate("company", "name _id") // Get company name
+      .populate("company", "name _id createAt") // Get company name
       .sort({ createdAt: -1 }); // Sort by latest transactions
 
     if (!transactions.length) {
@@ -28,13 +28,16 @@ exports.getCompanyTransactions = async (req, res) => {
       points: txn.points,
       sender:
         txn.sender && txn.type === "user_transfer"
-          ? { id: txn.sender._id, name: `${txn.sender.firstName} ${txn.sender.lastName}` }
+          ? {
+              id: txn.sender._id,
+              name: `${txn.sender.firstName} ${txn.sender.lastName}`,
+            }
           : { id: "Company", name: txn.company.name }, // Company allocation
       receiver: {
         id: txn.receiver._id,
         name: `${txn.receiver.firstName} ${txn.receiver.lastName}`,
       },
-      createdAt: txn.createdAt,
+      createdAt: txn.createAt,
     }));
 
     res.status(200).json({ transactions: formattedTransactions });
