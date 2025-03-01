@@ -752,7 +752,11 @@ exports.getUserCompanyPoints = async (req, res) => {
     const userWallet = await UserWallet.findOne({ user: userId });
 
     if (!userWallet) {
-      return res.status(404).json({ message: "User wallet not found" });
+      return res.status(200).json({
+        message: "User wallet not found",
+        userId: userId,
+        companyPoints: 0, // Return 0 points instead of an error
+      });
     }
 
     res.status(200).json({
