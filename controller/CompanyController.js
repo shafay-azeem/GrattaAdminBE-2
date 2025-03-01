@@ -17,8 +17,9 @@ exports.getCompanyTransactions = async (req, res) => {
       .populate("company", "name _id") // Get company name
       .sort({ updatedAt: -1 }); // Sort by latest transactions
 
+    // If no transactions, return a 200 response with an empty array
     if (!transactions.length) {
-      return res.status(404).json({ message: "No transactions found" });
+      return res.status(200).json({ message: "No transactions found", transactions: [] });
     }
 
     // Format the response
