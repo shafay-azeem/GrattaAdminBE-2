@@ -14,8 +14,8 @@ exports.getCompanyTransactions = async (req, res) => {
     const transactions = await PointsTransaction.find({ company: companyId })
       .populate("sender", "firstName lastName _id") // Get sender details
       .populate("receiver", "firstName lastName _id") // Get receiver details
-      .populate("company", "name _id createAt") // Get company name
-      .sort({ createdAt: -1 }); // Sort by latest transactions
+      .populate("company", "name _id") // Get company name
+      .sort({ updatedAt: -1 }); // Sort by latest transactions
 
     if (!transactions.length) {
       return res.status(404).json({ message: "No transactions found" });
@@ -37,7 +37,7 @@ exports.getCompanyTransactions = async (req, res) => {
         id: txn.receiver._id,
         name: `${txn.receiver.firstName} ${txn.receiver.lastName}`,
       },
-      createdAt: txn.createAt,
+      createdAt: txn.createdAt,
     }));
 
     res.status(200).json({ transactions: formattedTransactions });
