@@ -27,6 +27,7 @@ exports.getCompanyTransactions = async (req, res) => {
       _id: txn._id,
       type: txn.type,
       points: txn.points,
+      note:txn.note,
       sender:
         txn.sender && txn.type === "user_transfer"
           ? {

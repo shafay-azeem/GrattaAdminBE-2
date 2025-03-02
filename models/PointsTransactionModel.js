@@ -23,8 +23,13 @@ const pointsTransactionSchema = new mongoose.Schema(
       enum: ["company_allocation", "user_transfer"],
       required: true,
     },
+    note: {
+      type: String,
+      trim: true,
+      maxlength: 255, // Optional, limits note length
+    },
   },
-  { timestamps: true } // Correct placement of timestamps option
+  { timestamps: true } // Ensures createdAt and updatedAt are auto-generated
 );
 
 module.exports = mongoose.model("PointsTransaction", pointsTransactionSchema);

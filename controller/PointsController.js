@@ -242,3 +242,89 @@ exports.pointsDistributeByCompany = async (req, res) => {
     res.status(500).json({ message: "Server error", error });
   }
 };
+
+
+
+exports.userToUserTransaction = async (req, res) => {
+  try {
+    const senderId = req.user.id; // Extract sender ID from request
+    const companyId = req.user.company.toString(); // Extract company ID
+
+    const { users } = req.body; // Get the list of users to receive points
+
+    if (!users || users.length === 0) {
+      return res.status(400).json({ message: "Users list is required" });
+    }
+
+    // Extract points per user and calculate total points needed
+    const pointsPerUser = users[0].points;
+    const totalPointsNeeded = pointsPerUser * users.length;
+
+    // Fetch sender's wallet to check available personal points
+    const senderWallet = await UserWallet.findOne({ user: senderId, company: companyId });
+
+    if (!senderWallet) {
+      return res.status(400).json({ message: "Sender wallet not found" });
+    }
+    // console.log( senderWallet.personalPoints,"senderWallet.personalPoints")
+    // console.log( totalPointsNeeded,"totalPointsNeeded")
+    if (senderWallet.companyPoints < totalPointsNeeded) {
+      return res.status(400).json({ message: "Insufficient points in wallet" });
+    }
+
+    // Start MongoDB transaction
+    const session = await UserWallet.startSession();
+    session.startTransaction();
+
+    try {
+      const transactionPromises = users.map(async (user) => {
+        // Transfer points from sender to each receiver
+        await PointsTransaction.create(
+          [
+            {
+              sender: senderId,
+              receiver: user.id,
+              company: companyId,
+              points: pointsPerUser,
+              type: "user_transfer",
+              note: user.note || "", // Include note if provided
+            },
+          ],
+          { session }
+        );
+
+        // Deduct points from sender's personal points
+        await UserWallet.findOneAndUpdate(
+          { user: senderId, company: companyId },
+          { $inc: { companyPoints: -pointsPerUser } },
+          { session }
+        );
+
+        // Add points to receiver's personal points
+        await UserWallet.findOneAndUpdate(
+          { user: user.id, company: companyId },
+          { $inc: { personalPoints: pointsPerUser } },
+          { upsert: true, new: true, session }
+        );
+      });
+
+      await Promise.all(transactionPromises);
+
+      // Commit transaction
+      await session.commitTransaction();
+      session.endSession();
+
+      res.status(200).json({
+        message: `Successfully transferred ${totalPointsNeeded} points each to ${users.length} users.`,
+      });
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+      console.error("Transaction Error:", error);
+      res.status(500).json({ message: "Error processing transactions", error });
+    }
+  } catch (error) {
+    console.error("Server Error:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};
