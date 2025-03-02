@@ -770,3 +770,35 @@ exports.getUserCompanyPoints = async (req, res) => {
 };
 
 
+exports.getCompanyUsers = async (req, res) => {
+  try {
+    const companyId = req.user.company.toString(); // Extract company ID
+    const loggedInUserId = req.user.id; // Extract logged-in user ID
+
+    if (!companyId || !loggedInUserId) {
+      return res.status(400).json({ message: "Invalid request. Missing company or user ID." });
+    }
+
+    // Fetch users in the company, excluding the logged-in user
+    const users = await User.find({ company: companyId, _id: { $ne: loggedInUserId } })
+      .select("_id firstName lastName") // Fetch required fields
+      .lean(); // Convert documents to plain JS objects for transformation
+
+    if (!users.length) {
+      return res.status(200).json({ message: "No users found in the company.", users: [] });
+    }
+
+    // Format response with combined name
+    const formattedUsers = users.map(user => ({
+      _id: user._id,
+      displayName: `${user.firstName} ${user.lastName}`.trim(), // Combine first and last name
+      status: user.status
+    }));
+
+    res.status(200).json({ users: formattedUsers });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
