@@ -8,7 +8,7 @@ const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const asyncHandler = require("express-async-handler");
 const xlsx = require("xlsx");
-const fs = require("fs"); 
+const fs = require("fs");
 //SignUp User --Post
 exports.createUser = asyncHandler(async (req, res, next) => {
   const { firstName, lastName, companyName, email, password } = req.body;
@@ -596,7 +596,7 @@ exports.deleteUserById = asyncHandler(async (req, res, next) => {
 
 // Bulk invite users
 exports.bulkInvite = asyncHandler(async (req, res, next) => {
-  let companyId=req.user.company.toString()
+  let companyId = req.user.company.toString()
   try {
     // 1) Validate upload
     if (!req.file) {
@@ -712,7 +712,7 @@ exports.bulkInvite = asyncHandler(async (req, res, next) => {
 // Get Active User Count by Company ID -- GET
 exports.getActiveUserCountByCompanyId = asyncHandler(async (req, res, next) => {
   try {
-    let companyId=req.user.company.toString()
+    let companyId = req.user.company.toString()
 
     if (!companyId) {
       return res.status(400).json({
@@ -779,10 +779,14 @@ exports.getCompanyUsers = async (req, res) => {
       return res.status(400).json({ message: "Invalid request. Missing company or user ID." });
     }
 
-    // Fetch users in the company, excluding the logged-in user
-    const users = await User.find({ company: companyId, _id: { $ne: loggedInUserId } })
-      .select("_id firstName lastName") // Fetch required fields
-      .lean(); // Convert documents to plain JS objects for transformation
+    // Fetch only active users in the company, excluding the logged-in user
+    const users = await User.find({
+      company: companyId,
+      _id: { $ne: loggedInUserId }, // Exclude logged-in user
+      status: "active", // Only fetch active users
+    })
+      .select("_id firstName lastName status") // Ensure status is included
+      .lean(); // Convert to plain JS objects
 
     if (!users.length) {
       return res.status(200).json({ message: "No users found in the company.", users: [] });
