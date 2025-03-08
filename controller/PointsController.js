@@ -410,3 +410,60 @@ exports.userToUserTransaction = async (req, res) => {
     res.status(500).json({ message: "Error processing transactions", error });
   }
 };
+
+
+
+
+exports.getUserPointHistory = async (req, res) => {
+  try {
+    const userId = req.user.id; // Logged-in user ID
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    // Fetch transactions where the user is sender or receiver
+    const transactions = await PointsTransaction.find({
+      $or: [{ sender: userId }, { receiver: userId }],
+    })
+      .populate("sender", "firstName lastName _id") // Get sender details
+      .populate("receiver", "firstName lastName _id") // Get receiver details
+      .populate("company", "name _id") // Get company details
+      .sort({ createdAt: -1 }); // Show latest transactions first
+
+    if (!transactions.length) {
+      return res.status(200).json({ message: "No transaction history found.", transactions: [] });
+    }
+
+    // Format response
+    const formattedTransactions = transactions.map((txn) => {
+      const isSender = txn.sender && txn.sender._id.toString() === userId;
+      const isReceiver = txn.receiver && txn.receiver._id.toString() === userId;
+
+      return {
+        _id: txn._id,
+        type: txn.type,
+        points: isSender ? -txn.points : txn.points, // Negative points if sender
+        note: txn.note || "",
+        sender:
+          txn.sender && txn.type === "user_transfer"
+            ? {
+                id: txn.sender._id, // Replace logged-in user ID with "You"
+                name: isSender ? "You" : `${txn.sender.firstName} ${txn.sender.lastName}`,
+              }
+            : { id: "Company", name: txn.company.name }, // Company allocation
+        receiver: {
+          id: txn.receiver._id, // Replace logged-in user ID with "You"
+          name: isReceiver ? "You" : `${txn.receiver.firstName} ${txn.receiver.lastName}`,
+        },
+        createdAt: txn.createdAt,
+      };
+    });
+
+    res.status(200).json({ transactions: formattedTransactions });
+  } catch (error) {
+    console.error("Error fetching user transaction history:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
