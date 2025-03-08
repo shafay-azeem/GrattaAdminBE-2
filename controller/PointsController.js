@@ -512,3 +512,164 @@ exports.getReceivedUserTransfers = async (req, res) => {
     res.status(500).json({ message: "Server error", error });
   }
 };
+
+
+
+exports.getPointsGivenLastHour = async (req, res) => {
+  try {
+    const userId = req.user.id; // Extract logged-in user ID
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required." });
+    }
+
+    // Calculate timestamp for 1 hour ago
+    const oneHourAgo = new Date();
+    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+
+    // Fetch transactions where the logged-in user is the sender & created within last hour
+    const transactions = await PointsTransaction.find({
+      sender: userId,
+      type: "user_transfer",
+      createdAt: { $gte: oneHourAgo }, // Filter only last 1 hour transactions
+    })
+      .populate("receiver", "firstName lastName _id") // Get receiver details
+      .populate("company", "name _id") // Get company details
+      .sort({ createdAt: -1 }); // Show latest transactions first
+
+    // Format transactions
+    const formattedTransactions = transactions.map((txn) => ({
+      _id: txn._id,
+      points: -txn.points, // Show points in negative as they were given
+      note: txn.note || "",
+      sender: { id: txn.sender._id, name: "You" }, // Logged-in user as sender
+      receiver: {
+        id: txn.receiver._id ,
+        name: `${txn.receiver.firstName} ${txn.receiver.lastName}` 
+      },
+      createdAt: txn.createdAt,
+    }));
+
+    res.status(200).json({
+      transactions: formattedTransactions.length ? formattedTransactions : [],
+      message: formattedTransactions.length ? "Transactions found." : "No transactions found in the last hour.",
+    });
+  } catch (error) {
+    console.error("Error fetching given points transactions:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+
+exports.updateTransactionNote = async (req, res) => {
+  try {
+    const { transactionId, note } = req.body; // Get transaction ID and new note
+
+    if (!transactionId || note === undefined) {
+      return res.status(400).json({ message: "Transaction ID and note are required." });
+    }
+
+    // Update only the note field of the transaction
+    const updatedTransaction = await PointsTransaction.findByIdAndUpdate(
+      transactionId,
+      { note: note.trim() }, // Ensure note is trimmed for clean data
+      { new: true, select: "note" } // Return only the updated note
+    );
+
+    if (!updatedTransaction) {
+      return res.status(404).json({ message: "Transaction not found." });
+    }
+
+    res.status(200).json({ message: "Transaction note updated successfully.", note: updatedTransaction.note });
+  } catch (error) {
+    console.error("Error updating transaction note:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+
+exports.revertTransaction = async (req, res) => {
+  try {
+    const { transactionId } = req.body;
+    const loggedInUserId = req.user.id; // Ensure only authorized users can revert
+
+    if (!transactionId) {
+      return res.status(400).json({ message: "Transaction ID is required." });
+    }
+
+    // Find the original transaction
+    const transaction = await PointsTransaction.findById(transactionId);
+
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found." });
+    }
+
+    // Ensure the transaction is a user transfer (not company allocation)
+    if (transaction.type !== "user_transfer") {
+      return res.status(400).json({ message: "Only user transfers can be reverted." });
+    }
+
+    // Ensure the logged-in user is the sender
+    if (transaction.sender.toString() !== loggedInUserId) {
+      return res.status(403).json({ message: "You can only revert your own transactions." });
+    }
+
+    // Check if the transaction was created within the last 30 minutes
+    const transactionTime = new Date(transaction.createdAt);
+    const now = new Date();
+    const minutesDiff = (now - transactionTime) / (1000 * 60); // Convert milliseconds to minutes
+
+    if (minutesDiff > 30) {
+      return res.status(400).json({ message: "Transaction can only be reverted within 30 minutes." });
+    }
+
+    // Start a MongoDB session for transaction safety
+    const session = await UserWallet.startSession();
+    session.startTransaction();
+
+    try {
+      // Restore points to the sender
+      await UserWallet.findOneAndUpdate(
+        { user: transaction.sender, company: transaction.company },
+        { $inc: { personalPoints: transaction.points } },
+        { session }
+      );
+
+      // Deduct points from the receiver
+      await UserWallet.findOneAndUpdate(
+        { user: transaction.receiver, company: transaction.company },
+        { $inc: { personalPoints: -transaction.points } },
+        { session }
+      );
+
+      // Create a reversal transaction entry
+      const reversalTransaction = new PointsTransaction({
+        sender: transaction.receiver, // Reverse sender and receiver
+        receiver: transaction.sender,
+        company: transaction.company,
+        points: transaction.points,
+        type: "user_transfer",
+        note: `Reversal of transaction ${transactionId}`,
+      });
+
+      await reversalTransaction.save({ session });
+
+      // Commit the transaction
+      await session.commitTransaction();
+      session.endSession();
+
+      res.status(200).json({
+        message: "Transaction successfully reverted.",
+        revertedTransactionId: reversalTransaction._id,
+      });
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+      console.error("Error reverting transaction:", error);
+      res.status(500).json({ message: "Error reverting transaction.", error });
+    }
+  } catch (error) {
+    console.error("Server Error:", error);
+    res.status(500).json({ message: "Server error.", error });
+  }
+};

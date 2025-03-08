@@ -3,7 +3,10 @@ const {
     pointsDistributeByCompany,
     userToUserTransaction,
     getUserPointHistory,
-    getReceivedUserTransfers
+    getReceivedUserTransfers,
+    getPointsGivenLastHour,
+    updateTransactionNote,
+    revertTransaction
 } = require("../controller/PointsController");
 const { isAuthenticatedUser } = require("../middleware/auth");
 
@@ -15,4 +18,10 @@ router.route("/pointsDistributeByCompany").post(isAuthenticatedUser,pointsDistri
 router.route("/userToUserTransaction").post(isAuthenticatedUser,userToUserTransaction)
 router.route("/getUserPointHistory").get(isAuthenticatedUser,getUserPointHistory)
 router.route("/getReceivedUserTransfers").get(isAuthenticatedUser,getReceivedUserTransfers)
+router.route("/getPointsGivenLastHour").get(isAuthenticatedUser,getPointsGivenLastHour)
+router.route("/updateTransactionNote").put(isAuthenticatedUser,updateTransactionNote)
+router.route("/revertTransaction").put(isAuthenticatedUser,revertTransaction)
+
+
+
 module.exports = router;
