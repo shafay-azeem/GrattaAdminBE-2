@@ -19,7 +19,8 @@ const {
   bulkInvite,
   getActiveUserCountByCompanyId,
   getUserCompanyPoints,
-  getCompanyUsers
+  getCompanyUsers,
+  getUserPersonalPoints
 } = require("../controller/UserController");
 const { isAuthenticatedUser } = require("../middleware/auth");
 const fs = require("fs");
@@ -68,6 +69,7 @@ router.route("/createUser").post(createUser);
 router.route("/inviteUser").post(inviteUser);
 router.route("/getActiveUserCountByCompanyId").get(isAuthenticatedUser,getActiveUserCountByCompanyId);
 router.route("/getCompanyUsers").get(isAuthenticatedUser,getCompanyUsers);
+router.route("/getUserPersonalPoints").get(isAuthenticatedUser,getUserPersonalPoints);
 router.route("/getUserCompanyPoints").get(isAuthenticatedUser,getUserCompanyPoints);
 router.route("/login").post(loginUser);
 router.route("/getUsersByCompany/:companyId").get(getUsersByCompany);

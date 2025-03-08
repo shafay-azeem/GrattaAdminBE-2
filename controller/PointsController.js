@@ -467,3 +467,48 @@ exports.getUserPointHistory = async (req, res) => {
   }
 };
 
+
+exports.getReceivedUserTransfers = async (req, res) => {
+  try {
+    const userId = req.user.id; // Extract logged-in user ID
+    const companyId = req.user.company.toString(); // Extract company ID
+
+    if (!userId || !companyId) {
+      return res.status(400).json({ message: "User ID and Company ID are required." });
+    }
+
+    // Fetch personal points from UserWallet
+    const userWallet = await UserWallet.findOne({ user: userId, company: companyId });
+
+    // Fetch transactions where the logged-in user is the receiver and type is "user_transfer"
+    const transactions = await PointsTransaction.find({
+      receiver: userId,
+      type: "user_transfer",
+    })
+      .populate("sender", "firstName lastName _id") // Get sender details
+      .populate("company", "name _id") // Get company details
+      .sort({ createdAt: -1 }); // Show latest transactions first
+
+    // Format transactions
+    const formattedTransactions = transactions.map((txn) => ({
+      _id: txn._id,
+      points: txn.points,
+      note: txn.note || "",
+      sender: {
+        id:  txn.sender._id ,
+        name: `${txn.sender.firstName} ${txn.sender.lastName}` ,
+      },
+      receiver: { id: txn.receiver._id, name: "You" }, // Logged-in user as receiver
+      createdAt: txn.createdAt,
+    }));
+
+    res.status(200).json({
+      personalPoints: userWallet ? userWallet.personalPoints : 0, // Return personal points or 0 if wallet not found
+      transactions: formattedTransactions.length ? formattedTransactions : [],
+      message: formattedTransactions.length ? "Transactions found." : "No transactions found.",
+    });
+  } catch (error) {
+    console.error("Error fetching received transactions:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};

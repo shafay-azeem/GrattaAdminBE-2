@@ -806,3 +806,33 @@ exports.getCompanyUsers = async (req, res) => {
   }
 };
 
+
+
+exports.getUserPersonalPoints = async (req, res) => {
+  try {
+    const userId = req.user.id; // Extract logged-in user ID
+    const companyId = req.user.company.toString(); // Extract company ID
+
+    if (!userId || !companyId) {
+      return res.status(400).json({ message: "User ID and Company ID are required." });
+    }
+
+    // Fetch user wallet and get personal points
+    const userWallet = await UserWallet.findOne({ user: userId, company: companyId });
+
+    if (!userWallet) {
+      return res.status(200).json({ message: "User wallet not found.", personalPoints: 0 });
+    }
+
+    res.status(200).json({
+      userId: userId,
+      personalPoints: userWallet.personalPoints,
+    });
+  } catch (error) {
+    console.error("Error fetching user personal points:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+
+
