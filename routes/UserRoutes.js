@@ -11,7 +11,6 @@ const {
   userDetail,
   logout,
   getuserDetailById,
-  getuserDetailByresUserName,
   acceptInvitation,
   inviteUser,
   getUsersByCompany,
@@ -83,10 +82,7 @@ router.route("/updateProfile").put(isAuthenticatedUser, updateProfile);
 router.route("/deleteUser/:id").delete(isAuthenticatedUser, deleteUser);
 router.route("/deleteAllUsers").delete(deleteAllUsers);
 router.route("/logout").post(isAuthenticatedUser, logout);
-
 router.route("/getuserDetailById/:userId").get(getuserDetailById);
-router
-  .route("/getuserDetailByresUserName/:resUserName")
-  .get(getuserDetailByresUserName);
+
 
 module.exports = router;

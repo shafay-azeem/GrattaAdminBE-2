@@ -374,26 +374,6 @@ exports.logout = asyncHandler(async (req, res, next) => {
   );
 });
 
-exports.getuserDetailByresUserName = asyncHandler(async (req, res, next) => {
-  const resUserName = req.params.resUserName;
-  try {
-    const user = await User.findOne({ resUserName: resUserName });
-    if (!user) {
-      const error = new Error("User Not Found");
-      error.statusCode = 404;
-      throw error;
-    }
-    res.status(200).json({
-      success: true,
-      user: user,
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-});
 
 exports.getuserDetailById = asyncHandler(async (req, res, next) => {
   try {
