@@ -631,7 +631,7 @@ exports.revertTransaction = async (req, res) => {
       // Restore points to the sender
       await UserWallet.findOneAndUpdate(
         { user: transaction.sender, company: transaction.company },
-        { $inc: { personalPoints: transaction.points } },
+        { $inc: { companyPoints: transaction.points } },
         { session }
       );
 
@@ -654,12 +654,15 @@ exports.revertTransaction = async (req, res) => {
 
       await reversalTransaction.save({ session });
 
+      // Delete the original transaction
+      await PointsTransaction.findByIdAndDelete(transactionId, { session });
+
       // Commit the transaction
       await session.commitTransaction();
       session.endSession();
 
       res.status(200).json({
-        message: "Transaction successfully reverted.",
+        message: "Transaction successfully reverted and deleted.",
         revertedTransactionId: reversalTransaction._id,
       });
     } catch (error) {
