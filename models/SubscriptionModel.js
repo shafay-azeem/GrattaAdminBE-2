@@ -1,3 +1,5 @@
+const mongoose = require("mongoose");
+
 const subscriptionSchema = new mongoose.Schema({
     company: { type: mongoose.Schema.Types.ObjectId, ref: "Company", required: true },
     status: { type: String, enum: ["active", "failed", "expired"], required: true },

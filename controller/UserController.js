@@ -6,9 +6,11 @@ const sendMail = require("../utils/SendMail");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
+const dotenv = require("dotenv");
 const asyncHandler = require("express-async-handler");
 const xlsx = require("xlsx");
 const fs = require("fs");
+dotenv.config({ path: ".env" });
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 // SignUp User -- Post
@@ -34,7 +36,7 @@ exports.createUser = asyncHandler(async (req, res, next) => {
       });
     }
 
-    // Create Stripe Customer & Store Card
+    // // Create Stripe Customer & Store Card
     const customer = await stripe.customers.create({
       email,
       name: companyName,

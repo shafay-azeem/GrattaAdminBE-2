@@ -1,17 +1,17 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const cron = require("node-cron");
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const connectDataBase = require("./db/Database");
 const app = require("./app");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 const path = require("path");
-const Company = require("../models/CompanyModel");
-const Subscription = require("../models/Subscription");
+const Company = require("./models/CompanyModel");
+const Subscription = require("./models/SubscriptionModel");
 
 
 dotenv.config({ path: ".env" });
-
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 connectDataBase();
 
 
