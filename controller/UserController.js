@@ -121,10 +121,10 @@ exports.loginUser = asyncHandler(async (req, res, next) => {
         user._id
       );
     
-      if (!company) return res.status(404).json({ message: "Company not found." });
+      if (!company) return res.status(404).json({success: false, message: "Company not found." });
     
       if (company.subscriptionStatus === "expired") {
-        return res.status(403).json({ message: "Subscription expired. Please renew." });
+        return res.status(403).json({  success: false,message: "Subscription expired. Please renew." });
       }
     return res.status(200).json({
       success: true,
