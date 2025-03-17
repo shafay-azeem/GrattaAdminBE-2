@@ -118,7 +118,7 @@ exports.loginUser = asyncHandler(async (req, res, next) => {
     }
     
       const company = await Company.findById(
-        user._id
+        user.company
       );
     
       if (!company) return res.status(404).json({success: false, message: "Company not found." });
