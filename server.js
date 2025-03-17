@@ -35,8 +35,60 @@ app.get("/", (req, res) => {
 app.use(notFound);
 app.use(errorHandler);
 
-cron.schedule("0 0 * * *", async () => {
-  console.log("Running daily subscription check...");
+// cron.schedule("0 0 * * *", async () => {
+//   console.log("Running daily subscription check...");
+
+//   const now = new Date();
+//   const expiredCompanies = await Company.find({
+//     subscriptionStatus: "trial",
+//     trialEndsAt: { $lte: now },
+//   });
+
+//   for (const company of expiredCompanies) {
+//     try {
+//       // Check if the company has a failed payment
+//       const failedSubscription = await Subscription.findOne({
+//         company: company._id,
+//         status: "failed",
+//       });
+
+//       if (failedSubscription) {
+//         console.log(`Skipping Company ID: ${company._id} due to failed payment`);
+//         continue; // Skip failed subscriptions
+//       }
+
+//       // Create Stripe Subscription (if no failed record exists)
+//       const subscription = await stripe.subscriptions.create({
+//         customer: company.stripeCustomerId,
+//         items: [{ price: "price_299_monthly_plan_id" }],
+//         expand: ["latest_invoice.payment_intent"],
+//       });
+
+//       // Update Company & Subscription Models
+//       company.subscriptionStatus = "active";
+//       company.billingCycleDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+//       company.stripeSubscriptionId = subscription.id;
+//       await company.save();
+
+//       await Subscription.create({
+//         company: company._id,
+//         status: "active",
+//         amountPaid: 299,
+//         transactionId: subscription.latest_invoice.payment_intent.id,
+//         paymentMethod: "stripe",
+//         nextBillingDate: company.billingCycleDate,
+//       });
+
+//       console.log(`Subscription activated for Company ID: ${company._id}`);
+//     } catch (error) {
+//       console.error(`Failed to charge Company ID: ${company._id}`, error);
+//     }
+//   }
+// });
+
+
+cron.schedule("56 21 * * *", async () => {
+  console.log("Running daily subscription check at 08:42 UTC...");
 
   const now = new Date();
   const expiredCompanies = await Company.find({
@@ -60,7 +112,7 @@ cron.schedule("0 0 * * *", async () => {
       // Create Stripe Subscription (if no failed record exists)
       const subscription = await stripe.subscriptions.create({
         customer: company.stripeCustomerId,
-        items: [{ price: "price_299_monthly_plan_id" }],
+        items: [{ price: "price_1R3kcv05uvznrjSmXLfBkeEf" }],
         expand: ["latest_invoice.payment_intent"],
       });
 
@@ -81,6 +133,7 @@ cron.schedule("0 0 * * *", async () => {
 
       console.log(`Subscription activated for Company ID: ${company._id}`);
     } catch (error) {
+      console.log(error,"===")
       console.error(`Failed to charge Company ID: ${company._id}`, error);
     }
   }

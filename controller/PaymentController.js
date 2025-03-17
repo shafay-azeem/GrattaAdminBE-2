@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const Company = require("../models/CompanyModel");
 const UserWallet = require("../models/UserWalletModel");
 const PointsTransaction = require("../models/PointsTransactionModel"); // Added missing import
+const Subscription= require("../models/SubscriptionModel")
 require("dotenv").config();
 
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
