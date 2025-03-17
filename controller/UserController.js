@@ -9,9 +9,11 @@ const mongoose = require("mongoose");
 const asyncHandler = require("express-async-handler");
 const xlsx = require("xlsx");
 const fs = require("fs");
-//SignUp User --Post
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
+// SignUp User -- Post
 exports.createUser = asyncHandler(async (req, res, next) => {
-  const { firstName, lastName, companyName, email, password } = req.body;
+  const { firstName, lastName, companyName, email, password, cardToken } = req.body;
 
   try {
     // Check if the user already exists
@@ -28,12 +30,25 @@ exports.createUser = asyncHandler(async (req, res, next) => {
     if (company) {
       return res.status(400).json({
         success: false,
-        message:
-          "Company already exists. Please provide a unique company name.",
+        message: "Company already exists. Please provide a unique company name.",
       });
     }
-    // Create the company
-    company = await Company.create({ name: companyName });
+
+    // Create Stripe Customer & Store Card
+    const customer = await stripe.customers.create({
+      email,
+      name: companyName,
+      source: cardToken, // Store card for future charges
+    });
+
+    // Create the company with a 14-day trial
+    company = await Company.create({
+      name: companyName,
+      owner: user?._id, // Assign later
+      stripeCustomerId: customer.id,
+      trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days trial
+      subscriptionStatus: "trial",
+    });
 
     // Create the user
     user = await User.create({
@@ -44,27 +59,36 @@ exports.createUser = asyncHandler(async (req, res, next) => {
       company: company._id, // Link the user to the company
     });
 
+    // Update company with owner details
+    company.owner = user._id;
+    await company.save();
+
+    // Populate company data in user response
     user = await User.findById(user._id).populate("company", "name");
 
     // Send onboarding email
     await sendMail({
       email: user.email,
-      subject: "Onboarded Successfully",
-      message: "Welcome To Gratta Dashboard",
+      subject: "Welcome to Gratta Dashboard",
+      message: "Your 14-day free trial has started! Enjoy our services.",
     });
+
     return res.status(201).json({
       success: true,
       user,
-      message: "Signup Successfully",
+      message: "Signup successful. 14-day trial started.",
       token: user.getJwtToken(user._id),
     });
   } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
+    console.error("Signup Error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Signup failed. Please try again.",
+      error: err.message,
+    });
   }
 });
+
 
 //login --Post
 exports.loginUser = asyncHandler(async (req, res, next) => {

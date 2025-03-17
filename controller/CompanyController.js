@@ -48,3 +48,12 @@ exports.getCompanyTransactions = async (req, res) => {
     res.status(500).json({ message: "Server error", error });
   }
 };
+
+
+exports.getTrialStatus = async (req, res) => {
+  const company = await Company.findById(req.user.company);
+  const trialDaysLeft = Math.ceil((company.trialEndsAt - Date.now()) / (1000 * 60 * 60 * 24));
+
+  res.json({ trialDaysLeft: trialDaysLeft > 0 ? trialDaysLeft : 0 });
+};
+
