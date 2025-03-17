@@ -87,7 +87,7 @@ app.use(errorHandler);
 // });
 
 
-cron.schedule("56 21 * * *", async () => {
+cron.schedule("07 22 * * *", async () => {
   console.log("Running daily subscription check at 08:42 UTC...");
 
   const now = new Date();

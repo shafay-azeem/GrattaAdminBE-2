@@ -10,6 +10,7 @@ const dotenv = require("dotenv");
 const asyncHandler = require("express-async-handler");
 const xlsx = require("xlsx");
 const fs = require("fs");
+const { use } = require("../app");
 dotenv.config({ path: ".env" });
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
@@ -115,6 +116,16 @@ exports.loginUser = asyncHandler(async (req, res, next) => {
       error.statusCode = 401;
       throw error;
     }
+    
+      const company = await Company.findById(
+        user._id
+      );
+    
+      if (!company) return res.status(404).json({ message: "Company not found." });
+    
+      if (company.subscriptionStatus === "expired") {
+        return res.status(403).json({ message: "Subscription expired. Please renew." });
+      }
     return res.status(200).json({
       success: true,
       user,
