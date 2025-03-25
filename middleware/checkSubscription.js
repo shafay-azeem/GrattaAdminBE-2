@@ -1,4 +1,4 @@
-const Company = require("../models/Company");
+const Company = require("../models/CompanyModel");
 
 exports.checkSubscription = async (req, res, next) => {
   const company = await Company.findById(req.user.company);

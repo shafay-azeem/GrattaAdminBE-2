@@ -117,15 +117,15 @@ exports.loginUser = asyncHandler(async (req, res, next) => {
       throw error;
     }
     
-      const company = await Company.findById(
-        user.company
-      );
+      // const company = await Company.findById(
+      //   user.company
+      // );
     
-      if (!company) return res.status(404).json({success: false, message: "Company not found." });
+      // if (!company) return res.status(404).json({success: false, message: "Company not found." });
     
-      if (company.subscriptionStatus === "expired") {
-        return res.status(403).json({  success: false,message: "Subscription expired. Please renew." });
-      }
+      // if (company.subscriptionStatus === "expired") {
+      //   return res.status(403).json({  success: false,message: "Subscription expired. Please renew." });
+      // }
     return res.status(200).json({
       success: true,
       user,

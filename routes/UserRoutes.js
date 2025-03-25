@@ -22,6 +22,7 @@ const {
   getUserPersonalPoints
 } = require("../controller/UserController");
 const { isAuthenticatedUser } = require("../middleware/auth");
+const { checkSubscription } = require("../middleware/checkSubscription");
 const fs = require("fs");
 const path = require("path"); // Added the missing path module
 const multer = require("multer");
@@ -58,6 +59,7 @@ const upload = multer({ storage });
 router.post(
   "/bulkInvite",
   isAuthenticatedUser,
+  checkSubscription,
   ensureUploadsFolder, // Ensures folder is present
   upload.single("inviteFile"), // Single file upload with field name 'inviteFile'
   bulkInvite // The controller function
@@ -65,20 +67,20 @@ router.post(
 
 //user
 router.route("/createUser").post(createUser);
-router.route("/inviteUser").post(inviteUser);
+router.route("/inviteUser").post(isAuthenticatedUser,checkSubscription,inviteUser);
 router.route("/getActiveUserCountByCompanyId").get(isAuthenticatedUser,getActiveUserCountByCompanyId);
 router.route("/getCompanyUsers").get(isAuthenticatedUser,getCompanyUsers);
 router.route("/getUserPersonalPoints").get(isAuthenticatedUser,getUserPersonalPoints);
 router.route("/getUserCompanyPoints").get(isAuthenticatedUser,getUserCompanyPoints);
 router.route("/login").post(loginUser);
 router.route("/getUsersByCompany/:companyId").get(getUsersByCompany);
-router.route("/deleteUserById/:userId").delete(deleteUserById);
+router.route("/deleteUserById/:userId").delete(isAuthenticatedUser,checkSubscription,deleteUserById);
 router.route("/forgotPassword").post(forgotPassword);
 router.route("/resetPassword/:token").put(resetPassword);
 router.route("/acceptInvitation/:token").put(acceptInvitation);
 router.route("/userDetail").get(isAuthenticatedUser, userDetail);
 router.route("/getAllUsers").get(getAllUsers);
-router.route("/updateProfile").put(isAuthenticatedUser, updateProfile);
+router.route("/updateProfile").put(isAuthenticatedUser,checkSubscription, updateProfile);
 router.route("/deleteUser/:id").delete(isAuthenticatedUser, deleteUser);
 router.route("/deleteAllUsers").delete(deleteAllUsers);
 router.route("/logout").post(isAuthenticatedUser, logout);
